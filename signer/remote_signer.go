@@ -3,6 +3,7 @@ package signer
 import (
 	"context"
 	"fmt"
+	"github.com/cometbft/cometbft/libs/bytes"
 	"net"
 	"time"
 
@@ -24,6 +25,7 @@ const connRetrySec = 2
 type PrivValidator interface {
 	Sign(ctx context.Context, chainID string, block Block) ([]byte, []byte, time.Time, error)
 	GetPubKey(ctx context.Context, chainID string) ([]byte, error)
+	SignP2PMessage(uniqueID, chainID string, hash bytes.HexBytes) ([]byte, error)
 	Stop()
 }
 
@@ -178,6 +180,8 @@ func (rs *ReconnRemoteSigner) handleRequest(req cometprotoprivval.Message) comet
 		return rs.handlePubKeyRequest(typedReq.PubKeyRequest.ChainId)
 	case *cometprotoprivval.Message_PingRequest:
 		return rs.handlePingRequest()
+	case *cometprotoprivval.Message_SignP2PMessageRequest:
+		return rs.handleP2PHashRequest(typedReq.SignP2PMessageRequest.UniqueId, typedReq.SignP2PMessageRequest.ChainId, typedReq.SignP2PMessageRequest.Hash)
 	default:
 		rs.Logger.Error("Unknown request", "err", fmt.Errorf("%v", typedReq))
 		return cometprotoprivval.Message{}
@@ -205,6 +209,21 @@ func (rs *ReconnRemoteSigner) handleSignVoteRequest(chainID string, vote *cometp
 	msgSum.SignedVoteResponse.Vote.Timestamp = timestamp
 	msgSum.SignedVoteResponse.Vote.Signature = sig
 	msgSum.SignedVoteResponse.Vote.ExtensionSignature = voteExtSig
+	return cometprotoprivval.Message{Sum: msgSum}
+}
+
+func (rs *ReconnRemoteSigner) handleP2PHashRequest(uniqueID string, chainID string, hash []byte) cometprotoprivval.Message {
+	msgSum := &cometprotoprivval.Message_SignedP2PMessageResponse{
+		SignedP2PMessageResponse: &cometprotoprivval.SignedP2PMessageResponse{},
+	}
+
+	sig, err := signP2PMessage(rs.Logger, rs.privVal, uniqueID, chainID, hash)
+	if err != nil {
+		msgSum.SignedP2PMessageResponse.Error = getRemoteSignerError(err)
+		return cometprotoprivval.Message{Sum: msgSum}
+	}
+
+	msgSum.SignedP2PMessageResponse.Signature = sig
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 

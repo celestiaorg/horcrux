@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"os"
 	"time"
 
@@ -259,6 +260,22 @@ func (pv *FilePV) Sign(chainID string, block Block) ([]byte, []byte, time.Time, 
 	pv.saveSigned(height, round, step, signBytes, sig)
 
 	return sig, extSig, block.Timestamp, nil
+}
+
+// P2PMessageSignBytes returns the bytes to sign for a p2p message
+// Question: do we want to support keeping some history of the signed p2p messages
+// to avoid double signing the same chainID and uID?
+func P2PMessageSignBytes(uniqueID, chainID string, hash cometbytes.HexBytes) []byte {
+	return []byte(chainID + uniqueID + hash.String())
+}
+
+func (pv *FilePV) SignP2PMessage(uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+	signBytes := P2PMessageSignBytes(chainID, uniqueID, hash)
+	sig, err := pv.Key.PrivKey.Sign(signBytes)
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
 }
 
 // Save persists the FilePV to disk.

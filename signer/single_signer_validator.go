@@ -3,6 +3,7 @@ package signer
 import (
 	"context"
 	"fmt"
+	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"os"
 	"sync"
 	"time"
@@ -104,6 +105,14 @@ func (pv *SingleSignerValidator) loadChainStateIfNecessary(chainID string) (*Sin
 	pv.chainState.Store(chainID, chainState)
 
 	return chainState, nil
+}
+
+func (pv *SingleSignerValidator) SignP2PMessage(uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+	chainState, err := pv.loadChainStateIfNecessary(chainID)
+	if err != nil {
+		return nil, err
+	}
+	return chainState.filePV.SignP2PMessage(chainID, uniqueID, hash)
 }
 
 func (pv *SingleSignerValidator) Stop() {}

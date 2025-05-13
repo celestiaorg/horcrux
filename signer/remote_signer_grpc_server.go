@@ -3,6 +3,7 @@ package signer
 import (
 	"context"
 	"fmt"
+	"github.com/cometbft/cometbft/libs/bytes"
 	"net"
 	"time"
 
@@ -197,4 +198,27 @@ func signAndTrack(
 	}
 
 	return sig, voteExtSig, timestamp, nil
+}
+
+func signP2PMessage(
+	logger cometlog.Logger,
+	validator PrivValidator,
+	uniqueID string,
+	chainID string,
+	hash bytes.HexBytes,
+) ([]byte, error) {
+	sig, err := validator.SignP2PMessage(uniqueID, chainID, hash)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info(
+		"Signed",
+		"type", "p2p_hash",
+		"chain_id", chainID,
+		"unique_id", uniqueID,
+		"hash", hash,
+	)
+
+	return sig, nil
 }

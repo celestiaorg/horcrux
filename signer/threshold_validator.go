@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"os"
 	"strings"
 	"sync"
@@ -47,6 +48,11 @@ type ThresholdValidator struct {
 	cosignerHealth *CosignerHealth
 
 	nonceCache *CosignerNonceCache
+}
+
+func (pv *ThresholdValidator) SignP2PMessage(uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+	//TODO implement me
+	panic("implement me")
 }
 
 type ChainSignState struct {

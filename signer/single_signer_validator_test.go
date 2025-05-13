@@ -125,3 +125,32 @@ func TestSingleSignerValidator(t *testing.T) {
 		"vote extension signature verification failed")
 
 }
+
+func TestSingleSignerValidatorP2PMessage(t *testing.T) {
+	tmpDir := t.TempDir()
+	runtimeConfig := &RuntimeConfig{
+		HomeDir:  tmpDir,
+		StateDir: filepath.Join(tmpDir, "state"),
+	}
+
+	chainID := "test"
+	uid := "uid"
+	randomHash := cometrand.Bytes(tmhash.Size)
+	signBytes := P2PMessageSignBytes(chainID, uid, randomHash)
+
+	privateKey := cometcryptoed25519.GenPrivKey()
+	marshaled, err := cometjson.Marshal(cometprivval.FilePVKey{
+		Address: privateKey.PubKey().Address(),
+		PubKey:  privateKey.PubKey(),
+		PrivKey: privateKey,
+	})
+	require.NoError(t, err)
+	err = os.WriteFile(runtimeConfig.KeyFilePathSingleSigner(chainID), marshaled, 0600)
+	require.NoError(t, err)
+
+	validator := NewSingleSignerValidator(runtimeConfig)
+	signature, err := validator.SignP2PMessage(chainID, uid, randomHash)
+	require.NoError(t, err)
+
+	require.True(t, privateKey.PubKey().VerifySignature(signBytes, signature))
+}
