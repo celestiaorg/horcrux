@@ -104,6 +104,20 @@ func (s *RemoteSignerGRPCServer) Sign(
 	}, nil
 }
 
+func (s *RemoteSignerGRPCServer) SignP2PMessage(
+	ctx context.Context,
+	req *proto.SignP2PMessageRequest,
+) (*proto.SignedP2PMessageResponse, error) {
+	sig, err := signP2PMessage(s.logger, s.validator, req.UniqueId, req.ChainId, req.Hash)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SignedP2PMessageResponse{
+		Signature: sig,
+	}, nil
+}
+
 func signAndTrack(
 	ctx context.Context,
 	logger cometlog.Logger,
@@ -207,7 +221,7 @@ func signP2PMessage(
 	chainID string,
 	hash bytes.HexBytes,
 ) ([]byte, error) {
-	sig, err := validator.SignP2PMessage(uniqueID, chainID, hash)
+	sig, err := validator.SignP2PMessage(context.Background(), uniqueID, chainID, hash)
 	if err != nil {
 		return nil, err
 	}

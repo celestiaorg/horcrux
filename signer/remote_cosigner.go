@@ -151,3 +151,20 @@ func (cosigner *RemoteCosigner) Sign(
 		VoteExtensionSignature: res.VoteExtSignature,
 	}, nil
 }
+
+func (cosigner *RemoteCosigner) SignP2PMessage(
+	ctx context.Context,
+	req CosignerSignP2PMessageRequest,
+) (*CosignerSignP2PMessageResponse, error) {
+	res, err := cosigner.client.SignP2PMessage(ctx, &proto.SignP2PMessageRequest{
+		Hash:     req.Hash,
+		ChainId:  req.ChainID,
+		UniqueId: req.UniqueID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &CosignerSignP2PMessageResponse{
+		Signature: res.Signature,
+	}, nil
+}

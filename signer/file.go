@@ -2,6 +2,7 @@ package signer
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
@@ -269,7 +270,7 @@ func P2PMessageSignBytes(uniqueID, chainID string, hash cometbytes.HexBytes) []b
 	return []byte(chainID + uniqueID + hash.String())
 }
 
-func (pv *FilePV) SignP2PMessage(uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+func (pv *FilePV) SignP2PMessage(_ context.Context, uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
 	signBytes := P2PMessageSignBytes(chainID, uniqueID, hash)
 	sig, err := pv.Key.PrivKey.Sign(signBytes)
 	if err != nil {

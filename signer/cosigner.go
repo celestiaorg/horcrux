@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/cometbft/cometbft/libs/bytes"
 	"time"
 
 	cometcrypto "github.com/cometbft/cometbft/crypto"
@@ -118,6 +119,18 @@ type CosignerSignBlockResponse struct {
 	Signature              []byte
 	VoteExtensionSignature []byte
 }
+
+// TODO check if we need to generate something for this
+type CosignerSignP2PMessageRequest struct {
+	ChainID  string
+	UniqueID string
+	Hash     bytes.HexBytes
+}
+
+type CosignerSignP2PMessageResponse struct {
+	Signature []byte
+}
+
 type CosignerUUIDNonces struct {
 	UUID   uuid.UUID
 	Nonces CosignerNonces
@@ -203,4 +216,11 @@ func verifySignPayload(chainID string, signBytes, voteExtensionSignBytes []byte)
 
 	return HRSTKey{}, false,
 		fmt.Errorf("failed to unmarshal sign bytes into vote or proposal: %w", errors.Join(voteErr, proposalErr))
+}
+
+func validateP2PMessage(uniqueID, chainID string, hash bytes.HexBytes) error {
+	if len(hash) != 32 {
+		return fmt.Errorf("hash length must be 32 bytes, got %d", len(hash))
+	}
+	return nil
 }

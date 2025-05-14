@@ -44,6 +44,19 @@ func (rpc *CosignerGRPCServer) SignBlock(
 	}, nil
 }
 
+func (rpc *CosignerGRPCServer) SignP2PMessage(
+	ctx context.Context,
+	req *proto.SignP2PMessageRequest,
+) (*proto.SignedP2PMessageResponse, error) {
+	sig, err := rpc.thresholdValidator.SignP2PMessage(ctx, req.UniqueId, req.ChainId, req.Hash)
+	if err != nil {
+		return nil, err
+	}
+	return &proto.SignedP2PMessageResponse{
+		Signature: sig,
+	}, nil
+}
+
 func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	ctx context.Context,
 	req *proto.SetNoncesAndSignRequest,

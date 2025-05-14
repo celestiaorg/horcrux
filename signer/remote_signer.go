@@ -25,7 +25,7 @@ const connRetrySec = 2
 type PrivValidator interface {
 	Sign(ctx context.Context, chainID string, block Block) ([]byte, []byte, time.Time, error)
 	GetPubKey(ctx context.Context, chainID string) ([]byte, error)
-	SignP2PMessage(uniqueID, chainID string, hash bytes.HexBytes) ([]byte, error)
+	SignP2PMessage(ctx context.Context, uniqueID, chainID string, hash bytes.HexBytes) ([]byte, error)
 	Stop()
 }
 

@@ -333,6 +333,8 @@ func TestChainPureHorcrux(t *testing.T) {
 	}
 }
 
+// TODO add test for p2p message
+
 // TestMultipleChainHorcrux tests running a validator across multiple chains with a single horcrux cluster.
 func TestMultipleChainHorcrux(t *testing.T) {
 	ctx := context.Background()
