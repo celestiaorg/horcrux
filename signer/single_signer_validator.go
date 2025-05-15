@@ -107,12 +107,12 @@ func (pv *SingleSignerValidator) loadChainStateIfNecessary(chainID string) (*Sin
 	return chainState, nil
 }
 
-func (pv *SingleSignerValidator) SignP2PMessage(ctx context.Context, uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+func (pv *SingleSignerValidator) SignDigest(ctx context.Context, uniqueID, chainID string, digest cometbytes.HexBytes) ([]byte, error) {
 	chainState, err := pv.loadChainStateIfNecessary(chainID)
 	if err != nil {
 		return nil, err
 	}
-	return chainState.filePV.SignP2PMessage(ctx, chainID, uniqueID, hash)
+	return chainState.filePV.SignDigest(ctx, chainID, uniqueID, digest)
 }
 
 func (pv *SingleSignerValidator) Stop() {}

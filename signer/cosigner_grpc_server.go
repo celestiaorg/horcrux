@@ -44,15 +44,15 @@ func (rpc *CosignerGRPCServer) SignBlock(
 	}, nil
 }
 
-func (rpc *CosignerGRPCServer) SignP2PMessage(
+func (rpc *CosignerGRPCServer) SignDigest(
 	ctx context.Context,
-	req *proto.SignP2PMessageRequest,
-) (*proto.SignedP2PMessageResponse, error) {
-	sig, err := rpc.thresholdValidator.SignP2PMessage(ctx, req.UniqueId, req.ChainId, req.Hash)
+	req *proto.SignDigestRequest,
+) (*proto.SignedDigestResponse, error) {
+	sig, err := rpc.thresholdValidator.SignDigest(ctx, req.UniqueId, req.ChainId, req.Digest)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.SignedP2PMessageResponse{
+	return &proto.SignedDigestResponse{
 		Signature: sig,
 	}, nil
 }
@@ -62,15 +62,15 @@ func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	req *proto.SetNoncesAndSignRequest,
 ) (*proto.SetNoncesAndSignResponse, error) {
 	var cosignerReq CosignerSetNoncesAndSignRequest
-	if req.IsP2PMessage {
+	if req.IsDigest {
 		cosignerReq = CosignerSetNoncesAndSignRequest{
 			ChainID: req.ChainID,
 			Nonces: &CosignerUUIDNonces{
 				UUID:   uuid.UUID(req.Uuid),
 				Nonces: CosignerNoncesFromProto(req.Nonces),
 			},
-			SignBytes:    req.SignBytes,
-			IsP2PMessage: req.IsP2PMessage,
+			SignBytes: req.SignBytes,
+			IsDigest:  req.IsDigest,
 		}
 	} else {
 		cosignerReq = CosignerSetNoncesAndSignRequest{

@@ -304,14 +304,14 @@ func (cosigner *LocalCosigner) sign(req CosignerSignRequest) (CosignerSignRespon
 	return res, nil
 }
 
-// signP2PMessage Sign the sign request using the cosigner's shard.
+// signDigest Sign the sign request using the cosigner's shard.
 // Return the signed bytes or an error.
-// This method is exclusively used for p2p messages.
+// This method is exclusively used for digest messages.
 // Implements Cosigner interface.
-func (cosigner *LocalCosigner) signP2PMessage(req CosignerSignRequest) (CosignerSignResponse, error) {
+func (cosigner *LocalCosigner) signDigest(req CosignerSignRequest) (CosignerSignResponse, error) {
 	res := CosignerSignResponse{}
-	if !req.IsP2PMessage {
-		return res, fmt.Errorf("not p2p message")
+	if !req.IsDigest {
+		return res, fmt.Errorf("not a digest")
 	}
 
 	ccs, err := cosigner.getChainState(req.ChainID)
@@ -588,10 +588,10 @@ func (cosigner *LocalCosigner) SetNoncesAndSign(
 	}
 
 	cosignerReq := CosignerSignRequest{
-		UUID:         req.Nonces.UUID,
-		ChainID:      chainID,
-		SignBytes:    req.SignBytes,
-		IsP2PMessage: req.IsP2PMessage,
+		UUID:      req.Nonces.UUID,
+		ChainID:   chainID,
+		SignBytes: req.SignBytes,
+		IsDigest:  req.IsDigest,
 	}
 
 	if len(req.VoteExtensionSignBytes) > 0 {
@@ -599,8 +599,8 @@ func (cosigner *LocalCosigner) SetNoncesAndSign(
 		cosignerReq.VoteExtUUID = req.VoteExtensionNonces.UUID
 	}
 
-	if req.IsP2PMessage {
-		res, err := cosigner.signP2PMessage(cosignerReq)
+	if req.IsDigest {
+		res, err := cosigner.signDigest(cosignerReq)
 		return &res, err
 	}
 

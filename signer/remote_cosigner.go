@@ -109,13 +109,13 @@ func (cosigner *RemoteCosigner) SetNoncesAndSign(
 	ctx context.Context,
 	req CosignerSetNoncesAndSignRequest) (*CosignerSignResponse, error) {
 	var cosignerReq *proto.SetNoncesAndSignRequest
-	if req.IsP2PMessage {
+	if req.IsDigest {
 		cosignerReq = &proto.SetNoncesAndSignRequest{
-			Uuid:         req.Nonces.UUID[:],
-			ChainID:      req.ChainID,
-			Nonces:       req.Nonces.Nonces.toProto(),
-			SignBytes:    req.SignBytes,
-			IsP2PMessage: req.IsP2PMessage,
+			Uuid:      req.Nonces.UUID[:],
+			ChainID:   req.ChainID,
+			Nonces:    req.Nonces.Nonces.toProto(),
+			SignBytes: req.SignBytes,
+			IsDigest:  req.IsDigest,
 		}
 	} else {
 		cosignerReq = &proto.SetNoncesAndSignRequest{
@@ -163,19 +163,19 @@ func (cosigner *RemoteCosigner) Sign(
 	}, nil
 }
 
-func (cosigner *RemoteCosigner) SignP2PMessage(
+func (cosigner *RemoteCosigner) SignDigest(
 	ctx context.Context,
-	req CosignerSignP2PMessageRequest,
-) (*CosignerSignP2PMessageResponse, error) {
-	res, err := cosigner.client.SignP2PMessage(ctx, &proto.SignP2PMessageRequest{
-		Hash:     req.Hash,
+	req CosignerSignDigestRequest,
+) (*CosignerSignDigestResponse, error) {
+	res, err := cosigner.client.SignDigest(ctx, &proto.SignDigestRequest{
+		Digest:   req.Digest,
 		ChainId:  req.ChainID,
 		UniqueId: req.UniqueID,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &CosignerSignP2PMessageResponse{
+	return &CosignerSignDigestResponse{
 		Signature: res.Signature,
 	}, nil
 }

@@ -126,7 +126,7 @@ func TestSingleSignerValidator(t *testing.T) {
 
 }
 
-func TestSingleSignerValidatorP2PMessage(t *testing.T) {
+func TestSingleSignerValidatorSignDigest(t *testing.T) {
 	tmpDir := t.TempDir()
 	runtimeConfig := &RuntimeConfig{
 		HomeDir:  tmpDir,
@@ -136,7 +136,7 @@ func TestSingleSignerValidatorP2PMessage(t *testing.T) {
 	chainID := "test"
 	uid := "uid"
 	randomHash := cometrand.Bytes(tmhash.Size)
-	signBytes := P2PMessageSignBytes(chainID, uid, randomHash)
+	signBytes := DigestSignBytes(chainID, uid, randomHash)
 
 	privateKey := cometcryptoed25519.GenPrivKey()
 	marshaled, err := cometjson.Marshal(cometprivval.FilePVKey{
@@ -149,7 +149,7 @@ func TestSingleSignerValidatorP2PMessage(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := NewSingleSignerValidator(runtimeConfig)
-	signature, err := validator.SignP2PMessage(chainID, uid, randomHash)
+	signature, err := validator.SignDigest(context.Background(), chainID, uid, randomHash)
 	require.NoError(t, err)
 
 	require.True(t, privateKey.PubKey().VerifySignature(signBytes, signature))

@@ -634,10 +634,10 @@ func (pv *ThresholdValidator) proxyIfNecessary(
 	return true, signRes.Signature, signRes.VoteExtensionSignature, stamp, nil
 }
 
-func (pv *ThresholdValidator) proxyP2PHashRequestIfNecessary(
+func (pv *ThresholdValidator) proxySignDigestIfNecessary(
 	ctx context.Context,
 	uniqueID, chainID string,
-	hash cometbytes.HexBytes,
+	digest cometbytes.HexBytes,
 ) (bool, []byte, error) {
 	if pv.leader.IsLeader() {
 		return false, nil, nil
@@ -662,7 +662,7 @@ func (pv *ThresholdValidator) proxyP2PHashRequestIfNecessary(
 	pv.logger.Debug("I am not the leader. Proxying request to the leader",
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"hash", hash,
+		"digest", digest,
 	)
 	totalNotRaftLeader.Inc()
 
@@ -671,10 +671,10 @@ func (pv *ThresholdValidator) proxyP2PHashRequestIfNecessary(
 		return true, nil, fmt.Errorf("failed to find cosigner with id %d", leader)
 	}
 
-	signRes, err := cosignerLeader.(*RemoteCosigner).SignP2PMessage(ctx, CosignerSignP2PMessageRequest{
+	signRes, err := cosignerLeader.(*RemoteCosigner).SignDigest(ctx, CosignerSignDigestRequest{
 		ChainID:  chainID,
 		UniqueID: uniqueID,
-		Hash:     hash,
+		Digest:   digest,
 	})
 	if err != nil {
 		return true, nil, err
@@ -1040,11 +1040,11 @@ func (pv *ThresholdValidator) Sign(
 	return signature, voteExtSig, stamp, nil
 }
 
-func (pv *ThresholdValidator) SignP2PMessage(ctx context.Context, uniqueID, chainID string, hash cometbytes.HexBytes) ([]byte, error) {
+func (pv *ThresholdValidator) SignDigest(ctx context.Context, uniqueID, chainID string, digest cometbytes.HexBytes) ([]byte, error) {
 	log := pv.logger.With(
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"hash", hash,
+		"digest", digest,
 	)
 
 	if err := pv.LoadSignStateIfNecessary(chainID); err != nil {
@@ -1053,14 +1053,14 @@ func (pv *ThresholdValidator) SignP2PMessage(ctx context.Context, uniqueID, chai
 
 	// Only the leader can execute this function. Followers can handle the requests,
 	// but they just need to proxy the request to the raft leader
-	isProxied, proxySig, err := pv.proxyP2PHashRequestIfNecessary(ctx, uniqueID, chainID, hash)
+	isProxied, proxySig, err := pv.proxySignDigestIfNecessary(ctx, uniqueID, chainID, digest)
 	if isProxied {
 		return proxySig, err
 	}
 
 	totalRaftLeader.Inc()
 
-	log.Debug("I am the leader. Managing the sign process for this p2p message")
+	log.Debug("I am the leader. Managing the sign process for this digest")
 
 	numPeers := len(pv.peerCosigners)
 	total := uint8(numPeers + 1)
@@ -1109,7 +1109,7 @@ func (pv *ThresholdValidator) SignP2PMessage(ctx context.Context, uniqueID, chai
 	}
 
 	shareSignatures := make([][]byte, total)
-	signBytes := P2PMessageSignBytes(uniqueID, chainID, hash)
+	signBytes := DigestSignBytes(uniqueID, chainID, digest)
 	var eg errgroup.Group
 	for _, cosigner := range cosignersForThisMessage {
 		cosigner := cosigner
@@ -1121,10 +1121,10 @@ func (pv *ThresholdValidator) SignP2PMessage(ctx context.Context, uniqueID, chai
 				peerStartTime := time.Now()
 
 				sigReq := CosignerSetNoncesAndSignRequest{
-					ChainID:      chainID,
-					Nonces:       nonces.For(cosigner.GetID()),
-					SignBytes:    signBytes,
-					IsP2PMessage: true,
+					ChainID:   chainID,
+					Nonces:    nonces.For(cosigner.GetID()),
+					SignBytes: signBytes,
+					IsDigest:  true,
 				}
 
 				// set peerNonces and sign in single rpc call.

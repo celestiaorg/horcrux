@@ -55,7 +55,7 @@ type CosignerSignRequest struct {
 	UUID                   uuid.UUID
 	VoteExtensionSignBytes []byte
 	VoteExtUUID            uuid.UUID
-	IsP2PMessage           bool
+	IsDigest               bool
 }
 
 type CosignerSignResponse struct {
@@ -121,14 +121,13 @@ type CosignerSignBlockResponse struct {
 	VoteExtensionSignature []byte
 }
 
-// TODO check if we need to generate something for this
-type CosignerSignP2PMessageRequest struct {
+type CosignerSignDigestRequest struct {
 	ChainID  string
 	UniqueID string
-	Hash     bytes.HexBytes
+	Digest   bytes.HexBytes
 }
 
-type CosignerSignP2PMessageResponse struct {
+type CosignerSignDigestResponse struct {
 	Signature []byte
 }
 
@@ -170,7 +169,7 @@ type CosignerSetNoncesAndSignRequest struct {
 	VoteExtensionNonces    *CosignerUUIDNonces
 	VoteExtensionSignBytes []byte
 
-	IsP2PMessage bool
+	IsDigest bool
 }
 
 func verifySignPayload(chainID string, signBytes, voteExtensionSignBytes []byte) (HRSTKey, bool, error) {

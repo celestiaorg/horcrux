@@ -104,16 +104,16 @@ func (s *RemoteSignerGRPCServer) Sign(
 	}, nil
 }
 
-func (s *RemoteSignerGRPCServer) SignP2PMessage(
+func (s *RemoteSignerGRPCServer) SignDigest(
 	ctx context.Context,
-	req *proto.SignP2PMessageRequest,
-) (*proto.SignedP2PMessageResponse, error) {
-	sig, err := signP2PMessage(s.logger, s.validator, req.UniqueId, req.ChainId, req.Hash)
+	req *proto.SignDigestRequest,
+) (*proto.SignedDigestResponse, error) {
+	sig, err := signDigest(s.logger, s.validator, req.UniqueId, req.ChainId, req.Digest)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.SignedP2PMessageResponse{
+	return &proto.SignedDigestResponse{
 		Signature: sig,
 	}, nil
 }
@@ -214,24 +214,24 @@ func signAndTrack(
 	return sig, voteExtSig, timestamp, nil
 }
 
-func signP2PMessage(
+func signDigest(
 	logger cometlog.Logger,
 	validator PrivValidator,
 	uniqueID string,
 	chainID string,
-	hash bytes.HexBytes,
+	digest bytes.HexBytes,
 ) ([]byte, error) {
-	sig, err := validator.SignP2PMessage(context.Background(), uniqueID, chainID, hash)
+	sig, err := validator.SignDigest(context.Background(), uniqueID, chainID, digest)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(
 		"Signed",
-		"type", "p2p_hash",
+		"type", "digest",
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"hash", hash,
+		"digest", digest,
 	)
 
 	return sig, nil

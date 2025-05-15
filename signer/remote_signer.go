@@ -25,7 +25,7 @@ const connRetrySec = 2
 type PrivValidator interface {
 	Sign(ctx context.Context, chainID string, block Block) ([]byte, []byte, time.Time, error)
 	GetPubKey(ctx context.Context, chainID string) ([]byte, error)
-	SignP2PMessage(ctx context.Context, uniqueID, chainID string, hash bytes.HexBytes) ([]byte, error)
+	SignDigest(ctx context.Context, uniqueID, chainID string, digest bytes.HexBytes) ([]byte, error)
 	Stop()
 }
 
@@ -180,8 +180,8 @@ func (rs *ReconnRemoteSigner) handleRequest(req cometprotoprivval.Message) comet
 		return rs.handlePubKeyRequest(typedReq.PubKeyRequest.ChainId)
 	case *cometprotoprivval.Message_PingRequest:
 		return rs.handlePingRequest()
-	case *cometprotoprivval.Message_SignP2PMessageRequest:
-		return rs.handleP2PHashRequest(typedReq.SignP2PMessageRequest.UniqueId, typedReq.SignP2PMessageRequest.ChainId, typedReq.SignP2PMessageRequest.Hash)
+	case *cometprotoprivval.Message_SignDigestRequest:
+		return rs.handleSignDigestRequest(typedReq.SignDigestRequest.UniqueId, typedReq.SignDigestRequest.ChainId, typedReq.SignDigestRequest.Digest)
 	default:
 		rs.Logger.Error("Unknown request", "err", fmt.Errorf("%v", typedReq))
 		return cometprotoprivval.Message{}
@@ -212,18 +212,18 @@ func (rs *ReconnRemoteSigner) handleSignVoteRequest(chainID string, vote *cometp
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 
-func (rs *ReconnRemoteSigner) handleP2PHashRequest(uniqueID string, chainID string, hash []byte) cometprotoprivval.Message {
-	msgSum := &cometprotoprivval.Message_SignedP2PMessageResponse{
-		SignedP2PMessageResponse: &cometprotoprivval.SignedP2PMessageResponse{},
+func (rs *ReconnRemoteSigner) handleSignDigestRequest(uniqueID string, chainID string, digest []byte) cometprotoprivval.Message {
+	msgSum := &cometprotoprivval.Message_SignedDigestResponse{
+		SignedDigestResponse: &cometprotoprivval.SignedDigestResponse{},
 	}
 
-	sig, err := signP2PMessage(rs.Logger, rs.privVal, uniqueID, chainID, hash)
+	sig, err := signDigest(rs.Logger, rs.privVal, uniqueID, chainID, digest)
 	if err != nil {
-		msgSum.SignedP2PMessageResponse.Error = getRemoteSignerError(err)
+		msgSum.SignedDigestResponse.Error = getRemoteSignerError(err)
 		return cometprotoprivval.Message{Sum: msgSum}
 	}
 
-	msgSum.SignedP2PMessageResponse.Signature = sig
+	msgSum.SignedDigestResponse.Signature = sig
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 
