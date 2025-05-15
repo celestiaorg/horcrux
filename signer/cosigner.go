@@ -55,6 +55,7 @@ type CosignerSignRequest struct {
 	UUID                   uuid.UUID
 	VoteExtensionSignBytes []byte
 	VoteExtUUID            uuid.UUID
+	IsP2PMessage           bool
 }
 
 type CosignerSignResponse struct {
@@ -168,6 +169,8 @@ type CosignerSetNoncesAndSignRequest struct {
 
 	VoteExtensionNonces    *CosignerUUIDNonces
 	VoteExtensionSignBytes []byte
+
+	IsP2PMessage bool
 }
 
 func verifySignPayload(chainID string, signBytes, voteExtensionSignBytes []byte) (HRSTKey, bool, error) {
@@ -216,11 +219,4 @@ func verifySignPayload(chainID string, signBytes, voteExtensionSignBytes []byte)
 
 	return HRSTKey{}, false,
 		fmt.Errorf("failed to unmarshal sign bytes into vote or proposal: %w", errors.Join(voteErr, proposalErr))
-}
-
-func validateP2PMessage(uniqueID, chainID string, hash bytes.HexBytes) error {
-	if len(hash) != 32 {
-		return fmt.Errorf("hash length must be 32 bytes, got %d", len(hash))
-	}
-	return nil
 }

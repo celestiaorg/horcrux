@@ -61,24 +61,37 @@ func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	ctx context.Context,
 	req *proto.SetNoncesAndSignRequest,
 ) (*proto.SetNoncesAndSignResponse, error) {
-	cosignerReq := CosignerSetNoncesAndSignRequest{
-		ChainID: req.ChainID,
-
-		HRST: HRSTKeyFromProto(req.Hrst),
-
-		Nonces: &CosignerUUIDNonces{
-			UUID:   uuid.UUID(req.Uuid),
-			Nonces: CosignerNoncesFromProto(req.Nonces),
-		},
-		SignBytes: req.SignBytes,
-	}
-
-	if len(req.VoteExtSignBytes) > 0 && len(req.VoteExtUuid) == 16 {
-		cosignerReq.VoteExtensionNonces = &CosignerUUIDNonces{
-			UUID:   uuid.UUID(req.VoteExtUuid),
-			Nonces: CosignerNoncesFromProto(req.VoteExtNonces),
+	var cosignerReq CosignerSetNoncesAndSignRequest
+	if req.IsP2PMessage {
+		cosignerReq = CosignerSetNoncesAndSignRequest{
+			ChainID: req.ChainID,
+			Nonces: &CosignerUUIDNonces{
+				UUID:   uuid.UUID(req.Uuid),
+				Nonces: CosignerNoncesFromProto(req.Nonces),
+			},
+			SignBytes:    req.SignBytes,
+			IsP2PMessage: req.IsP2PMessage,
 		}
-		cosignerReq.VoteExtensionSignBytes = req.VoteExtSignBytes
+	} else {
+		cosignerReq = CosignerSetNoncesAndSignRequest{
+			ChainID: req.ChainID,
+
+			HRST: HRSTKeyFromProto(req.Hrst),
+
+			Nonces: &CosignerUUIDNonces{
+				UUID:   uuid.UUID(req.Uuid),
+				Nonces: CosignerNoncesFromProto(req.Nonces),
+			},
+			SignBytes: req.SignBytes,
+		}
+
+		if len(req.VoteExtSignBytes) > 0 && len(req.VoteExtUuid) == 16 {
+			cosignerReq.VoteExtensionNonces = &CosignerUUIDNonces{
+				UUID:   uuid.UUID(req.VoteExtUuid),
+				Nonces: CosignerNoncesFromProto(req.VoteExtNonces),
+			}
+			cosignerReq.VoteExtensionSignBytes = req.VoteExtSignBytes
+		}
 	}
 
 	res, err := rpc.cosigner.SetNoncesAndSign(ctx, cosignerReq)

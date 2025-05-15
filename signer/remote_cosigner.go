@@ -108,18 +108,29 @@ func (cosigner *RemoteCosigner) GetNonces(
 func (cosigner *RemoteCosigner) SetNoncesAndSign(
 	ctx context.Context,
 	req CosignerSetNoncesAndSignRequest) (*CosignerSignResponse, error) {
-	cosignerReq := &proto.SetNoncesAndSignRequest{
-		Uuid:      req.Nonces.UUID[:],
-		ChainID:   req.ChainID,
-		Nonces:    req.Nonces.Nonces.toProto(),
-		Hrst:      req.HRST.toProto(),
-		SignBytes: req.SignBytes,
-	}
+	var cosignerReq *proto.SetNoncesAndSignRequest
+	if req.IsP2PMessage {
+		cosignerReq = &proto.SetNoncesAndSignRequest{
+			Uuid:         req.Nonces.UUID[:],
+			ChainID:      req.ChainID,
+			Nonces:       req.Nonces.Nonces.toProto(),
+			SignBytes:    req.SignBytes,
+			IsP2PMessage: req.IsP2PMessage,
+		}
+	} else {
+		cosignerReq = &proto.SetNoncesAndSignRequest{
+			Uuid:      req.Nonces.UUID[:],
+			ChainID:   req.ChainID,
+			Nonces:    req.Nonces.Nonces.toProto(),
+			Hrst:      req.HRST.toProto(),
+			SignBytes: req.SignBytes,
+		}
 
-	if req.VoteExtensionNonces != nil && len(req.VoteExtensionSignBytes) > 0 {
-		cosignerReq.VoteExtUuid = req.VoteExtensionNonces.UUID[:]
-		cosignerReq.VoteExtNonces = req.VoteExtensionNonces.Nonces.toProto()
-		cosignerReq.VoteExtSignBytes = req.VoteExtensionSignBytes
+		if req.VoteExtensionNonces != nil && len(req.VoteExtensionSignBytes) > 0 {
+			cosignerReq.VoteExtUuid = req.VoteExtensionNonces.UUID[:]
+			cosignerReq.VoteExtNonces = req.VoteExtensionNonces.Nonces.toProto()
+			cosignerReq.VoteExtSignBytes = req.VoteExtensionSignBytes
+		}
 	}
 
 	res, err := cosigner.client.SetNoncesAndSign(ctx, cosignerReq)

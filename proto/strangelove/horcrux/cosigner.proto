@@ -62,6 +62,7 @@ message SetNoncesAndSignRequest {
 	repeated Nonce voteExtNonces = 6;
 	bytes voteExtSignBytes = 7;
 	string chainID = 8;
+	bool is_p2p_message = 9;
 }
 
 message SetNoncesAndSignResponse {
