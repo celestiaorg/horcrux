@@ -263,11 +263,6 @@ func (pv *FilePV) Sign(chainID string, block Block) ([]byte, []byte, time.Time, 
 	return sig, extSig, block.Timestamp, nil
 }
 
-// DigestSignBytes returns the bytes to sign for a digest message
-func DigestSignBytes(uniqueID, chainID string, hash cometbytes.HexBytes) []byte {
-	return []byte(chainID + uniqueID + hash.String())
-}
-
 func (pv *FilePV) SignDigest(_ context.Context, uniqueID, chainID string, digest cometbytes.HexBytes) ([]byte, error) {
 	signBytes := DigestSignBytes(chainID, uniqueID, digest)
 	sig, err := pv.Key.PrivKey.Sign(signBytes)

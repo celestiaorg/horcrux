@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/cometbft/cometbft/libs/log"
+	"github.com/cometbft/cometbft/privval"
 	"net/http"
 	"testing"
 	"time"
@@ -35,6 +37,11 @@ func testChainSingleNodeAndHorcruxThreshold(
 ) {
 	ctx := context.Background()
 	cw, pubKey := startChainSingleNodeAndHorcruxThreshold(ctx, t, totalValidators, totalSigners, threshold, totalSentries, sentriesPerSigner)
+
+	// manually test signing digests
+	t.Run("test signing digests", func(t *testing.T) {
+		testDigestSigning(t, cw, pubKey)
+	})
 
 	ourValidator := cw.chain.Validators[0]
 	cosigners := ourValidator.Sidecars
@@ -415,4 +422,19 @@ func getMetrics(ctx context.Context, cosigner *cosmos.SidecarProcess) (map[strin
 	}
 
 	return mf, nil
+}
+
+func testDigestSigning(t *testing.T, cw *chainWrapper, key crypto.PubKey) {
+	ourValidator := cw.chain.Validators[0]
+	cosigners := ourValidator.Sidecars
+	signerRemoteAddr, err := cosigners[0].GetHostPorts(ctx, grpcPortDocker)
+	require.NoError(t, err)
+	require.NotEmpty(t, signerRemoteAddr)
+	logger := log.TestingLogger()
+
+	signerListener, err := privval.NewSignerListener(signerRemoteAddr[0], logger)
+	signer, err := privval.NewSignerClient(signerListener, cw.chain.Config().ChainID)
+	require.NoError(t, err)
+
+	signer.SignProposal()
 }
