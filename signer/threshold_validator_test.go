@@ -382,12 +382,12 @@ func testThresholdValidatorSignDigest(t *testing.T, threshold, total uint8) {
 	err := validator.LoadSignStateIfNecessary(testChainID)
 	require.NoError(t, err)
 
-	uniqueID := "id"
 	chainID := testChainID
+	uniqueID := "id"
 	digest := []byte("digest")
 
-	signBytes := DigestSignBytes(uniqueID, chainID, digest)
-	signature, err := validator.SignDigest(ctx, uniqueID, chainID, digest)
+	signBytes := DigestSignBytes(chainID, uniqueID, digest)
+	signature, err := validator.SignDigest(ctx, chainID, uniqueID, digest)
 	require.NoError(t, err)
 	require.True(t, pubKey.VerifySignature(signBytes, signature))
 

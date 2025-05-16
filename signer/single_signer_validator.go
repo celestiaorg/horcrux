@@ -107,7 +107,7 @@ func (pv *SingleSignerValidator) loadChainStateIfNecessary(chainID string) (*Sin
 	return chainState, nil
 }
 
-func (pv *SingleSignerValidator) SignDigest(ctx context.Context, uniqueID, chainID string, digest cometbytes.HexBytes) ([]byte, error) {
+func (pv *SingleSignerValidator) SignDigest(ctx context.Context, chainID, uniqueID string, digest cometbytes.HexBytes) ([]byte, error) {
 	chainState, err := pv.loadChainStateIfNecessary(chainID)
 	if err != nil {
 		return nil, err

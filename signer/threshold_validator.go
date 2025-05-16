@@ -637,7 +637,7 @@ func (pv *ThresholdValidator) proxyIfNecessary(
 
 func (pv *ThresholdValidator) proxySignDigestIfNecessary(
 	ctx context.Context,
-	uniqueID, chainID string,
+	chainID, uniqueID string,
 	digest cometbytes.HexBytes,
 ) (bool, []byte, error) {
 	if pv.leader.IsLeader() {
@@ -1041,7 +1041,7 @@ func (pv *ThresholdValidator) Sign(
 	return signature, voteExtSig, stamp, nil
 }
 
-func (pv *ThresholdValidator) SignDigest(ctx context.Context, uniqueID, chainID string, digest cometbytes.HexBytes) ([]byte, error) {
+func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID string, digest cometbytes.HexBytes) ([]byte, error) {
 	log := pv.logger.With(
 		"chain_id", chainID,
 		"unique_id", uniqueID,
@@ -1054,7 +1054,7 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, uniqueID, chainID 
 
 	// Only the leader can execute this function. Followers can handle the requests,
 	// but they just need to proxy the request to the raft leader
-	isProxied, proxySig, err := pv.proxySignDigestIfNecessary(ctx, uniqueID, chainID, digest)
+	isProxied, proxySig, err := pv.proxySignDigestIfNecessary(ctx, chainID, uniqueID, digest)
 	if isProxied {
 		return proxySig, err
 	}
@@ -1110,7 +1110,7 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, uniqueID, chainID 
 	}
 
 	shareSignatures := make([][]byte, total)
-	signBytes := types.DigestSignBytes(uniqueID, chainID, digest)
+	signBytes := types.DigestSignBytes(chainID, uniqueID, digest)
 	var eg errgroup.Group
 	for _, cosigner := range cosignersForThisMessage {
 		cosigner := cosigner

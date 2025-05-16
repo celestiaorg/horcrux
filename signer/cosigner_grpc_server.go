@@ -48,7 +48,7 @@ func (rpc *CosignerGRPCServer) SignDigest(
 	ctx context.Context,
 	req *proto.SignDigestRequest,
 ) (*proto.SignedDigestResponse, error) {
-	sig, err := rpc.thresholdValidator.SignDigest(ctx, req.UniqueId, req.ChainId, req.Digest)
+	sig, err := rpc.thresholdValidator.SignDigest(ctx, req.ChainId, req.UniqueId, req.Digest)
 	if err != nil {
 		return nil, err
 	}

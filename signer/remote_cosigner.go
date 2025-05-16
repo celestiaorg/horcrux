@@ -168,9 +168,9 @@ func (cosigner *RemoteCosigner) SignDigest(
 	req CosignerSignDigestRequest,
 ) (*CosignerSignDigestResponse, error) {
 	res, err := cosigner.client.SignDigest(ctx, &proto.SignDigestRequest{
-		Digest:   req.Digest,
 		ChainId:  req.ChainID,
 		UniqueId: req.UniqueID,
+		Digest:   req.Digest,
 	})
 	if err != nil {
 		return nil, err

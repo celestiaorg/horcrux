@@ -108,7 +108,7 @@ func (s *RemoteSignerGRPCServer) SignDigest(
 	ctx context.Context,
 	req *proto.SignDigestRequest,
 ) (*proto.SignedDigestResponse, error) {
-	sig, err := signDigest(s.logger, s.validator, req.UniqueId, req.ChainId, req.Digest)
+	sig, err := signDigest(s.logger, s.validator, req.ChainId, req.UniqueId, req.Digest)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +221,7 @@ func signDigest(
 	chainID string,
 	digest bytes.HexBytes,
 ) ([]byte, error) {
-	sig, err := validator.SignDigest(context.Background(), uniqueID, chainID, digest)
+	sig, err := validator.SignDigest(context.Background(), chainID, uniqueID, digest)
 	if err != nil {
 		return nil, err
 	}
