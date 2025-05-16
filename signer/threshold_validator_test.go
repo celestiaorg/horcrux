@@ -386,7 +386,7 @@ func testThresholdValidatorSignDigest(t *testing.T, threshold, total uint8) {
 	uniqueID := "id"
 	digest := []byte("digest")
 
-	signBytes := DigestSignBytes(chainID, uniqueID, digest)
+	signBytes := comet.DigestSignBytes(chainID, uniqueID, digest)
 	signature, err := validator.SignDigest(ctx, chainID, uniqueID, digest)
 	require.NoError(t, err)
 	require.True(t, pubKey.VerifySignature(signBytes, signature))

@@ -2,6 +2,7 @@ package signer
 
 import (
 	"context"
+	"github.com/cometbft/cometbft/types"
 	"path/filepath"
 	"time"
 
@@ -136,7 +137,7 @@ func TestSingleSignerValidatorSignDigest(t *testing.T) {
 	chainID := "test"
 	uid := "uid"
 	randomHash := cometrand.Bytes(tmhash.Size)
-	signBytes := DigestSignBytes(chainID, uid, randomHash)
+	signBytes := types.DigestSignBytes(chainID, uid, randomHash)
 
 	privateKey := cometcryptoed25519.GenPrivKey()
 	marshaled, err := cometjson.Marshal(cometprivval.FilePVKey{
