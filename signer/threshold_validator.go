@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	cometbytes "github.com/cometbft/cometbft/libs/bytes"
+	"github.com/cometbft/cometbft/types"
 	"os"
 	"strings"
 	"sync"
@@ -1109,7 +1110,7 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, uniqueID, chainID 
 	}
 
 	shareSignatures := make([][]byte, total)
-	signBytes := DigestSignBytes(uniqueID, chainID, digest)
+	signBytes := types.DigestSignBytes(uniqueID, chainID, digest)
 	var eg errgroup.Group
 	for _, cosigner := range cosignersForThisMessage {
 		cosigner := cosigner
