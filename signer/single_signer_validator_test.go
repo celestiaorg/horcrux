@@ -137,7 +137,8 @@ func TestSingleSignerValidatorSignDigest(t *testing.T) {
 	chainID := "test"
 	uid := "uid"
 	randomHash := cometrand.Bytes(tmhash.Size)
-	signBytes := types.DigestSignBytes(chainID, uid, randomHash)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uid, randomHash)
+	require.NoError(t, err)
 
 	privateKey := cometcryptoed25519.GenPrivKey()
 	marshaled, err := cometjson.Marshal(cometprivval.FilePVKey{

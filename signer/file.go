@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"os"
 	"time"
 
@@ -263,8 +262,11 @@ func (pv *FilePV) Sign(chainID string, block Block) ([]byte, []byte, time.Time, 
 	return sig, extSig, block.Timestamp, nil
 }
 
-func (pv *FilePV) SignDigest(_ context.Context, chainID, uniqueID string, digest cometbytes.HexBytes) ([]byte, error) {
-	signBytes := types.DigestSignBytes(chainID, uniqueID, digest)
+func (pv *FilePV) SignDigest(_ context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
+	if err != nil {
+		return nil, err
+	}
 	sig, err := pv.Key.PrivKey.Sign(signBytes)
 	if err != nil {
 		return nil, err

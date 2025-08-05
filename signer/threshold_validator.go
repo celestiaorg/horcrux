@@ -1110,7 +1110,10 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID 
 	}
 
 	shareSignatures := make([][]byte, total)
-	signBytes := types.DigestSignBytes(chainID, uniqueID, digest)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, digest)
+	if err != nil {
+		return nil, err
+	}
 	var eg errgroup.Group
 	for _, cosigner := range cosignersForThisMessage {
 		cosigner := cosigner

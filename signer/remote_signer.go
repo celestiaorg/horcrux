@@ -180,8 +180,8 @@ func (rs *ReconnRemoteSigner) handleRequest(req cometprotoprivval.Message) comet
 		return rs.handlePubKeyRequest(typedReq.PubKeyRequest.ChainId)
 	case *cometprotoprivval.Message_PingRequest:
 		return rs.handlePingRequest()
-	case *cometprotoprivval.Message_SignDigestRequest:
-		return rs.handleSignDigestRequest(typedReq.SignDigestRequest.ChainId, typedReq.SignDigestRequest.UniqueId, typedReq.SignDigestRequest.Digest)
+	case *cometprotoprivval.Message_SignRawBytesRequest:
+		return rs.handleSignDigestRequest(typedReq.SignRawBytesRequest.ChainId, typedReq.SignRawBytesRequest.UniqueId, typedReq.SignRawBytesRequest.RawBytes)
 	default:
 		rs.Logger.Error("Unknown request", "err", fmt.Errorf("%v", typedReq))
 		return cometprotoprivval.Message{}
@@ -213,17 +213,17 @@ func (rs *ReconnRemoteSigner) handleSignVoteRequest(chainID string, vote *cometp
 }
 
 func (rs *ReconnRemoteSigner) handleSignDigestRequest(chainID, uniqueID string, digest []byte) cometprotoprivval.Message {
-	msgSum := &cometprotoprivval.Message_SignedDigestResponse{
-		SignedDigestResponse: &cometprotoprivval.SignedDigestResponse{},
+	msgSum := &cometprotoprivval.Message_SignedRawBytesResponse{
+		SignedRawBytesResponse: &cometprotoprivval.SignedRawBytesResponse{},
 	}
 
 	sig, err := signDigest(rs.Logger, rs.privVal, chainID, uniqueID, digest)
 	if err != nil {
-		msgSum.SignedDigestResponse.Error = getRemoteSignerError(err)
+		msgSum.SignedRawBytesResponse.Error = getRemoteSignerError(err)
 		return cometprotoprivval.Message{Sum: msgSum}
 	}
 
-	msgSum.SignedDigestResponse.Signature = sig
+	msgSum.SignedRawBytesResponse.Signature = sig
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 

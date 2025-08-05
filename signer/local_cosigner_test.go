@@ -170,7 +170,8 @@ func testLocalCosignerSign(t *testing.T, threshold, total uint8, security []Cosi
 func testLocalCosignerDigestSign(t *testing.T, threshold, total uint8, security []CosignerSecurity) {
 	ctx := context.Background()
 	thresholdCosigners, nonces, u, pubKey := setupCosigners(t, ctx, threshold, total, security)
-	signBytes := comet.DigestSignBytes(testChainID, "uniqueID", []byte("digest"))
+	signBytes, err := comet.RawBytesMessageSignBytes(testChainID, "uniqueID", []byte("digest"))
+	require.NoError(t, err)
 
 	sigs := make([]PartialSignature, threshold)
 	for i, cosigner := range thresholdCosigners {
