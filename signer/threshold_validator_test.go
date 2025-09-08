@@ -30,29 +30,29 @@ import (
 
 func TestThresholdValidator2of2(t *testing.T) {
 	testThresholdValidator(t, 2, 2)
-	t.Run("sign digest test", func(t *testing.T) {
-		testThresholdValidatorSignDigest(t, 2, 2)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 2, 2)
 	})
 }
 
 func TestThresholdValidator3of3(t *testing.T) {
 	testThresholdValidator(t, 3, 3)
-	t.Run("sign digest test", func(t *testing.T) {
-		testThresholdValidatorSignDigest(t, 3, 3)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 3, 3)
 	})
 }
 
 func TestThresholdValidator2of3(t *testing.T) {
 	testThresholdValidator(t, 2, 3)
-	t.Run("sign digest test", func(t *testing.T) {
-		testThresholdValidatorSignDigest(t, 2, 3)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 2, 3)
 	})
 }
 
 func TestThresholdValidator3of5(t *testing.T) {
 	testThresholdValidator(t, 3, 5)
-	t.Run("sign digest test", func(t *testing.T) {
-		testThresholdValidatorSignDigest(t, 3, 5)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 3, 5)
 	})
 }
 
@@ -350,7 +350,7 @@ func testThresholdValidator(t *testing.T, threshold, total uint8) {
 	}
 }
 
-func testThresholdValidatorSignDigest(t *testing.T, threshold, total uint8) {
+func testThresholdValidatorSignRawBytes(t *testing.T, threshold, total uint8) {
 	cosigners, pubKey := getTestLocalCosigners(t, threshold, total)
 
 	thresholdCosigners := make([]Cosigner, 0, threshold-1)
@@ -384,11 +384,11 @@ func testThresholdValidatorSignDigest(t *testing.T, threshold, total uint8) {
 
 	chainID := testChainID
 	uniqueID := "id"
-	digest := []byte("digest")
+	rawBytes := []byte("raw bytes msg")
 
-	signBytes, err := comet.RawBytesMessageSignBytes(chainID, uniqueID, digest)
+	signBytes, err := comet.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
 	require.NoError(t, err)
-	signature, err := validator.SignDigest(ctx, chainID, uniqueID, digest)
+	signature, err := validator.SignRawBytes(ctx, chainID, uniqueID, rawBytes)
 	require.NoError(t, err)
 	require.True(t, pubKey.VerifySignature(signBytes, signature))
 

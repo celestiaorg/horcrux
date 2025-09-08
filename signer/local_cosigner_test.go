@@ -62,8 +62,8 @@ func testLocalCosignerSignRSA(t *testing.T, threshold, total uint8) {
 	}
 
 	testLocalCosignerSign(t, threshold, total, security)
-	t.Run("sign digest test", func(t *testing.T) {
-		testLocalCosignerDigestSign(t, threshold, total, security)
+	t.Run("sign raw bytes message test", func(t *testing.T) {
+		testLocalCosignerRawBytesSign(t, threshold, total, security)
 	})
 }
 
@@ -101,8 +101,8 @@ func testLocalCosignerSignECIES(t *testing.T, threshold, total uint8) {
 	}
 
 	testLocalCosignerSign(t, threshold, total, security)
-	t.Run("sign digest test", func(t *testing.T) {
-		testLocalCosignerDigestSign(t, threshold, total, security)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testLocalCosignerRawBytesSign(t, threshold, total, security)
 	})
 }
 
@@ -167,10 +167,10 @@ func testLocalCosignerSign(t *testing.T, threshold, total uint8, security []Cosi
 	require.True(t, pubKey.VerifySignature(signBytes, combinedSig))
 }
 
-func testLocalCosignerDigestSign(t *testing.T, threshold, total uint8, security []CosignerSecurity) {
+func testLocalCosignerRawBytesSign(t *testing.T, threshold, total uint8, security []CosignerSecurity) {
 	ctx := context.Background()
 	thresholdCosigners, nonces, u, pubKey := setupCosigners(t, ctx, threshold, total, security)
-	signBytes, err := comet.RawBytesMessageSignBytes(testChainID, "uniqueID", []byte("digest"))
+	signBytes, err := comet.RawBytesMessageSignBytes(testChainID, "uniqueID", []byte("raw bytes msg"))
 	require.NoError(t, err)
 
 	sigs := make([]PartialSignature, threshold)
@@ -194,9 +194,9 @@ func testLocalCosignerDigestSign(t *testing.T, threshold, total uint8, security 
 				UUID:   u,
 				Nonces: cosignerNonces,
 			},
-			ChainID:   testChainID,
-			SignBytes: signBytes,
-			IsDigest:  true,
+			ChainID:    testChainID,
+			SignBytes:  signBytes,
+			IsRawBytes: true,
 		})
 		require.NoError(t, err)
 

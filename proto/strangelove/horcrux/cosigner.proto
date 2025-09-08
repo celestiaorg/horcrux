@@ -4,7 +4,7 @@ package strangelove.horcrux;
 option go_package = "github.com/strangelove-ventures/horcrux/v3/signer/proto";
 
 service Cosigner {
-	rpc SignDigest(SignDigestRequest) returns (SignedDigestResponse) {}
+	rpc SignRawBytes(SignRawBytesRequest) returns (SignedRawBytesResponse) {}
 	rpc SignBlock (SignBlockRequest) returns (SignBlockResponse) {}
 	rpc SetNoncesAndSign (SetNoncesAndSignRequest) returns (SetNoncesAndSignResponse) {}
 	rpc GetNonces (GetNoncesRequest) returns (GetNoncesResponse) {}
@@ -62,7 +62,7 @@ message SetNoncesAndSignRequest {
 	repeated Nonce voteExtNonces = 6;
 	bytes voteExtSignBytes = 7;
 	string chainID = 8;
-	bool is_digest = 9;
+	bool is_raw_bytes = 9;
 }
 
 message SetNoncesAndSignResponse {
@@ -99,12 +99,12 @@ message GetLeaderResponse {
 message PingRequest {}
 message PingResponse {}
 
-message SignDigestRequest {
+message SignRawBytesRequest {
 	string chain_id = 1;
-	bytes digest = 2;
+	bytes raw_bytes = 2;
 	string unique_id = 3;
 }
 
-message SignedDigestResponse {
+message SignedRawBytesResponse {
 	bytes signature = 1;
 }

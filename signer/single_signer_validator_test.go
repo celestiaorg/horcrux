@@ -127,7 +127,7 @@ func TestSingleSignerValidator(t *testing.T) {
 
 }
 
-func TestSingleSignerValidatorSignDigest(t *testing.T) {
+func TestSingleSignerValidatorSignRawBytes(t *testing.T) {
 	tmpDir := t.TempDir()
 	runtimeConfig := &RuntimeConfig{
 		HomeDir:  tmpDir,
@@ -136,8 +136,8 @@ func TestSingleSignerValidatorSignDigest(t *testing.T) {
 
 	chainID := "test"
 	uid := "uid"
-	randomHash := cometrand.Bytes(tmhash.Size)
-	signBytes, err := types.RawBytesMessageSignBytes(chainID, uid, randomHash)
+	randomBytes := cometrand.Bytes(1000)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uid, randomBytes)
 	require.NoError(t, err)
 
 	privateKey := cometcryptoed25519.GenPrivKey()
@@ -151,7 +151,7 @@ func TestSingleSignerValidatorSignDigest(t *testing.T) {
 	require.NoError(t, err)
 
 	validator := NewSingleSignerValidator(runtimeConfig)
-	signature, err := validator.SignDigest(context.Background(), chainID, uid, randomHash)
+	signature, err := validator.SignRawBytes(context.Background(), chainID, uid, randomBytes)
 	require.NoError(t, err)
 
 	require.True(t, privateKey.PubKey().VerifySignature(signBytes, signature))

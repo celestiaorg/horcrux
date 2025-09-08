@@ -5,7 +5,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	cometbytes "github.com/cometbft/cometbft/libs/bytes"
 	"github.com/cometbft/cometbft/types"
 	"os"
 	"strings"
@@ -635,10 +634,10 @@ func (pv *ThresholdValidator) proxyIfNecessary(
 	return true, signRes.Signature, signRes.VoteExtensionSignature, stamp, nil
 }
 
-func (pv *ThresholdValidator) proxySignDigestIfNecessary(
+func (pv *ThresholdValidator) proxySignRawBytesIfNecessary(
 	ctx context.Context,
 	chainID, uniqueID string,
-	digest cometbytes.HexBytes,
+	rawBytes []byte,
 ) (bool, []byte, error) {
 	if pv.leader.IsLeader() {
 		return false, nil, nil
@@ -663,7 +662,7 @@ func (pv *ThresholdValidator) proxySignDigestIfNecessary(
 	pv.logger.Debug("I am not the leader. Proxying request to the leader",
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"digest", digest,
+		"raw_bytes", rawBytes,
 	)
 	totalNotRaftLeader.Inc()
 
@@ -672,10 +671,10 @@ func (pv *ThresholdValidator) proxySignDigestIfNecessary(
 		return true, nil, fmt.Errorf("failed to find cosigner with id %d", leader)
 	}
 
-	signRes, err := cosignerLeader.(*RemoteCosigner).SignDigest(ctx, CosignerSignDigestRequest{
+	signRes, err := cosignerLeader.(*RemoteCosigner).SignRawBytes(ctx, CosignerSignRawBytesRequest{
 		ChainID:  chainID,
 		UniqueID: uniqueID,
-		Digest:   digest,
+		RawBytes: rawBytes,
 	})
 	if err != nil {
 		return true, nil, err
@@ -1041,11 +1040,11 @@ func (pv *ThresholdValidator) Sign(
 	return signature, voteExtSig, stamp, nil
 }
 
-func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID string, digest cometbytes.HexBytes) ([]byte, error) {
+func (pv *ThresholdValidator) SignRawBytes(ctx context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
 	log := pv.logger.With(
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"digest", digest,
+		"raw_bytes", rawBytes,
 	)
 
 	if err := pv.LoadSignStateIfNecessary(chainID); err != nil {
@@ -1054,14 +1053,14 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID 
 
 	// Only the leader can execute this function. Followers can handle the requests,
 	// but they just need to proxy the request to the raft leader
-	isProxied, proxySig, err := pv.proxySignDigestIfNecessary(ctx, chainID, uniqueID, digest)
+	isProxied, proxySig, err := pv.proxySignRawBytesIfNecessary(ctx, chainID, uniqueID, rawBytes)
 	if isProxied {
 		return proxySig, err
 	}
 
 	totalRaftLeader.Inc()
 
-	log.Debug("I am the leader. Managing the sign process for this digest")
+	log.Debug("I am the leader. Managing the sign process for this raw bytes message")
 
 	numPeers := len(pv.peerCosigners)
 	total := uint8(numPeers + 1)
@@ -1110,7 +1109,7 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID 
 	}
 
 	shareSignatures := make([][]byte, total)
-	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, digest)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
 	if err != nil {
 		return nil, err
 	}
@@ -1125,10 +1124,10 @@ func (pv *ThresholdValidator) SignDigest(ctx context.Context, chainID, uniqueID 
 				peerStartTime := time.Now()
 
 				sigReq := CosignerSetNoncesAndSignRequest{
-					ChainID:   chainID,
-					Nonces:    nonces.For(cosigner.GetID()),
-					SignBytes: signBytes,
-					IsDigest:  true,
+					ChainID:    chainID,
+					Nonces:     nonces.For(cosigner.GetID()),
+					SignBytes:  signBytes,
+					IsRawBytes: true,
 				}
 
 				// set peerNonces and sign in single rpc call.

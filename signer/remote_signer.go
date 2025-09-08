@@ -3,7 +3,6 @@ package signer
 import (
 	"context"
 	"fmt"
-	"github.com/cometbft/cometbft/libs/bytes"
 	"net"
 	"time"
 
@@ -25,7 +24,7 @@ const connRetrySec = 2
 type PrivValidator interface {
 	Sign(ctx context.Context, chainID string, block Block) ([]byte, []byte, time.Time, error)
 	GetPubKey(ctx context.Context, chainID string) ([]byte, error)
-	SignDigest(ctx context.Context, chainID, uniqueID string, digest bytes.HexBytes) ([]byte, error)
+	SignRawBytes(ctx context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error)
 	Stop()
 }
 
@@ -181,7 +180,7 @@ func (rs *ReconnRemoteSigner) handleRequest(req cometprotoprivval.Message) comet
 	case *cometprotoprivval.Message_PingRequest:
 		return rs.handlePingRequest()
 	case *cometprotoprivval.Message_SignRawBytesRequest:
-		return rs.handleSignDigestRequest(typedReq.SignRawBytesRequest.ChainId, typedReq.SignRawBytesRequest.UniqueId, typedReq.SignRawBytesRequest.RawBytes)
+		return rs.handleSignRawBytesRequest(typedReq.SignRawBytesRequest.ChainId, typedReq.SignRawBytesRequest.UniqueId, typedReq.SignRawBytesRequest.RawBytes)
 	default:
 		rs.Logger.Error("Unknown request", "err", fmt.Errorf("%v", typedReq))
 		return cometprotoprivval.Message{}
@@ -212,12 +211,12 @@ func (rs *ReconnRemoteSigner) handleSignVoteRequest(chainID string, vote *cometp
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 
-func (rs *ReconnRemoteSigner) handleSignDigestRequest(chainID, uniqueID string, digest []byte) cometprotoprivval.Message {
+func (rs *ReconnRemoteSigner) handleSignRawBytesRequest(chainID, uniqueID string, rawBytes []byte) cometprotoprivval.Message {
 	msgSum := &cometprotoprivval.Message_SignedRawBytesResponse{
 		SignedRawBytesResponse: &cometprotoprivval.SignedRawBytesResponse{},
 	}
 
-	sig, err := signDigest(rs.Logger, rs.privVal, chainID, uniqueID, digest)
+	sig, err := signRawBytes(rs.Logger, rs.privVal, chainID, uniqueID, rawBytes)
 	if err != nil {
 		msgSum.SignedRawBytesResponse.Error = getRemoteSignerError(err)
 		return cometprotoprivval.Message{Sum: msgSum}

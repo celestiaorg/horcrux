@@ -44,15 +44,15 @@ func (rpc *CosignerGRPCServer) SignBlock(
 	}, nil
 }
 
-func (rpc *CosignerGRPCServer) SignDigest(
+func (rpc *CosignerGRPCServer) SignRawBytes(
 	ctx context.Context,
-	req *proto.SignDigestRequest,
-) (*proto.SignedDigestResponse, error) {
-	sig, err := rpc.thresholdValidator.SignDigest(ctx, req.ChainId, req.UniqueId, req.Digest)
+	req *proto.SignRawBytesRequest,
+) (*proto.SignedRawBytesResponse, error) {
+	sig, err := rpc.thresholdValidator.SignRawBytes(ctx, req.ChainId, req.UniqueId, req.RawBytes)
 	if err != nil {
 		return nil, err
 	}
-	return &proto.SignedDigestResponse{
+	return &proto.SignedRawBytesResponse{
 		Signature: sig,
 	}, nil
 }
@@ -61,8 +61,8 @@ func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	ctx context.Context,
 	req *proto.SetNoncesAndSignRequest,
 ) (*proto.SetNoncesAndSignResponse, error) {
-	if req.IsDigest {
-		return rpc.setNoncesAndSignDigest(ctx, req)
+	if req.IsRawBytes {
+		return rpc.setNoncesAndSignRawBytes(ctx, req)
 	}
 	cosignerReq := CosignerSetNoncesAndSignRequest{
 		ChainID: req.ChainID,
@@ -112,12 +112,12 @@ func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	}, nil
 }
 
-func (rpc *CosignerGRPCServer) setNoncesAndSignDigest(
+func (rpc *CosignerGRPCServer) setNoncesAndSignRawBytes(
 	ctx context.Context,
 	req *proto.SetNoncesAndSignRequest,
 ) (*proto.SetNoncesAndSignResponse, error) {
-	if !req.IsDigest {
-		return nil, fmt.Errorf("expected is_digest to be true")
+	if !req.IsRawBytes {
+		return nil, fmt.Errorf("expected is_raw_bytes to be true")
 	}
 	cosignerReq := CosignerSetNoncesAndSignRequest{
 		ChainID: req.ChainID,
@@ -125,21 +125,21 @@ func (rpc *CosignerGRPCServer) setNoncesAndSignDigest(
 			UUID:   uuid.UUID(req.Uuid),
 			Nonces: CosignerNoncesFromProto(req.Nonces),
 		},
-		SignBytes: req.SignBytes,
-		IsDigest:  req.IsDigest,
+		SignBytes:  req.SignBytes,
+		IsRawBytes: req.IsRawBytes,
 	}
 
 	res, err := rpc.cosigner.SetNoncesAndSign(ctx, cosignerReq)
 	if err != nil {
 		rpc.raftStore.logger.Error(
-			"Failed to sign digest with shard",
+			"Failed to sign raw bytes with shard",
 			"chain_id", req.ChainID,
 			"error", err,
 		)
 		return nil, err
 	}
 	rpc.raftStore.logger.Info(
-		"Signed digest with shard",
+		"Signed raw bytes with shard",
 		"chain_id", req.ChainID,
 	)
 	return &proto.SetNoncesAndSignResponse{

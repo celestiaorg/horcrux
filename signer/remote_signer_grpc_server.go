@@ -3,7 +3,6 @@ package signer
 import (
 	"context"
 	"fmt"
-	"github.com/cometbft/cometbft/libs/bytes"
 	"net"
 	"time"
 
@@ -104,16 +103,16 @@ func (s *RemoteSignerGRPCServer) Sign(
 	}, nil
 }
 
-func (s *RemoteSignerGRPCServer) SignDigest(
+func (s *RemoteSignerGRPCServer) SignRawBytes(
 	ctx context.Context,
-	req *proto.SignDigestRequest,
-) (*proto.SignedDigestResponse, error) {
-	sig, err := signDigest(s.logger, s.validator, req.ChainId, req.UniqueId, req.Digest)
+	req *proto.SignRawBytesRequest,
+) (*proto.SignedRawBytesResponse, error) {
+	sig, err := signRawBytes(s.logger, s.validator, req.ChainId, req.UniqueId, req.RawBytes)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.SignedDigestResponse{
+	return &proto.SignedRawBytesResponse{
 		Signature: sig,
 	}, nil
 }
@@ -214,24 +213,24 @@ func signAndTrack(
 	return sig, voteExtSig, timestamp, nil
 }
 
-func signDigest(
+func signRawBytes(
 	logger cometlog.Logger,
 	validator PrivValidator,
 	uniqueID string,
 	chainID string,
-	digest bytes.HexBytes,
+	rawBytes []byte,
 ) ([]byte, error) {
-	sig, err := validator.SignDigest(context.Background(), chainID, uniqueID, digest)
+	sig, err := validator.SignRawBytes(context.Background(), chainID, uniqueID, rawBytes)
 	if err != nil {
 		return nil, err
 	}
 
 	logger.Info(
 		"Signed",
-		"type", "digest",
+		"type", "raw_bytes",
 		"chain_id", chainID,
 		"unique_id", uniqueID,
-		"digest", digest,
+		"raw_bytes", rawBytes,
 	)
 
 	return sig, nil

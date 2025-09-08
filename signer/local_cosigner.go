@@ -304,14 +304,14 @@ func (cosigner *LocalCosigner) sign(req CosignerSignRequest) (CosignerSignRespon
 	return res, nil
 }
 
-// signDigest Sign the sign request using the cosigner's shard.
+// signRawBytes Sign the sign request using the cosigner's shard.
 // Return the signed bytes or an error.
-// This method is exclusively used for digest messages.
+// This method is exclusively used for raw bytes messages.
 // Implements Cosigner interface.
-func (cosigner *LocalCosigner) signDigest(req CosignerSignRequest) (CosignerSignResponse, error) {
+func (cosigner *LocalCosigner) signRawBytes(req CosignerSignRequest) (CosignerSignResponse, error) {
 	res := CosignerSignResponse{}
-	if !req.IsDigest {
-		return res, fmt.Errorf("not a digest")
+	if !req.IsRawBytes {
+		return res, fmt.Errorf("not a raw bytes message")
 	}
 
 	ccs, err := cosigner.getChainState(req.ChainID)
@@ -588,10 +588,10 @@ func (cosigner *LocalCosigner) SetNoncesAndSign(
 	}
 
 	cosignerReq := CosignerSignRequest{
-		UUID:      req.Nonces.UUID,
-		ChainID:   chainID,
-		SignBytes: req.SignBytes,
-		IsDigest:  req.IsDigest,
+		UUID:       req.Nonces.UUID,
+		ChainID:    chainID,
+		SignBytes:  req.SignBytes,
+		IsRawBytes: req.IsRawBytes,
 	}
 
 	if len(req.VoteExtensionSignBytes) > 0 {
@@ -599,8 +599,8 @@ func (cosigner *LocalCosigner) SetNoncesAndSign(
 		cosignerReq.VoteExtUUID = req.VoteExtensionNonces.UUID
 	}
 
-	if req.IsDigest {
-		res, err := cosigner.signDigest(cosignerReq)
+	if req.IsRawBytes {
+		res, err := cosigner.signRawBytes(cosignerReq)
 		return &res, err
 	}
 

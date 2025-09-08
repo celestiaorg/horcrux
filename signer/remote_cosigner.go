@@ -109,13 +109,13 @@ func (cosigner *RemoteCosigner) SetNoncesAndSign(
 	ctx context.Context,
 	req CosignerSetNoncesAndSignRequest) (*CosignerSignResponse, error) {
 	var cosignerReq *proto.SetNoncesAndSignRequest
-	if req.IsDigest {
+	if req.IsRawBytes {
 		cosignerReq = &proto.SetNoncesAndSignRequest{
-			Uuid:      req.Nonces.UUID[:],
-			ChainID:   req.ChainID,
-			Nonces:    req.Nonces.Nonces.toProto(),
-			SignBytes: req.SignBytes,
-			IsDigest:  req.IsDigest,
+			Uuid:       req.Nonces.UUID[:],
+			ChainID:    req.ChainID,
+			Nonces:     req.Nonces.Nonces.toProto(),
+			SignBytes:  req.SignBytes,
+			IsRawBytes: req.IsRawBytes,
 		}
 	} else {
 		cosignerReq = &proto.SetNoncesAndSignRequest{
@@ -163,19 +163,19 @@ func (cosigner *RemoteCosigner) Sign(
 	}, nil
 }
 
-func (cosigner *RemoteCosigner) SignDigest(
+func (cosigner *RemoteCosigner) SignRawBytes(
 	ctx context.Context,
-	req CosignerSignDigestRequest,
-) (*CosignerSignDigestResponse, error) {
-	res, err := cosigner.client.SignDigest(ctx, &proto.SignDigestRequest{
+	req CosignerSignRawBytesRequest,
+) (*CosignerSignRawBytesResponse, error) {
+	res, err := cosigner.client.SignRawBytes(ctx, &proto.SignRawBytesRequest{
 		ChainId:  req.ChainID,
 		UniqueId: req.UniqueID,
-		Digest:   req.Digest,
+		RawBytes: req.RawBytes,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &CosignerSignDigestResponse{
+	return &CosignerSignRawBytesResponse{
 		Signature: res.Signature,
 	}, nil
 }

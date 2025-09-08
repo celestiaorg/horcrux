@@ -40,9 +40,9 @@ func testChainSingleNodeAndHorcruxThreshold(
 	ctx := context.Background()
 	cw, pubKey := startChainSingleNodeAndHorcruxThreshold(ctx, t, totalValidators, totalSigners, threshold, totalSentries, sentriesPerSigner)
 
-	// manually test signing digests
-	t.Run("test signing digests", func(t *testing.T) {
-		testDigestSigning(t, ctx, cw, pubKey)
+	// manually test signing raw bytes
+	t.Run("test signing raw bytes", func(t *testing.T) {
+		testRawBytesSigning(t, ctx, cw, pubKey)
 	})
 
 	ourValidator := cw.chain.Validators[0]
@@ -426,7 +426,7 @@ func getMetrics(ctx context.Context, cosigner *cosmos.SidecarProcess) (map[strin
 	return mf, nil
 }
 
-func testDigestSigning(t *testing.T, ctx context.Context, cw *chainWrapper, key crypto.PubKey) {
+func testRawBytesSigning(t *testing.T, ctx context.Context, cw *chainWrapper, key crypto.PubKey) {
 	ourValidator := cw.chain.Validators[0]
 	cosigners := ourValidator.Sidecars
 	signerRemoteAddr, err := cosigners[0].GetHostPorts(ctx, signerPortDocker)
@@ -434,17 +434,18 @@ func testDigestSigning(t *testing.T, ctx context.Context, cw *chainWrapper, key 
 	require.NotEmpty(t, signerRemoteAddr)
 
 	uniqueID := "test-id"
-	digest := []byte("test-digest")
+	rawBytes := []byte("test-raw-bytes")
 	chainID := cw.chain.Config().ChainID
-	signBytes := types.DigestSignBytes(chainID, uniqueID, digest)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
+	require.NoError(t, err)
 
 	grpcConn, err := grpc.NewClient(signerRemoteAddr[0], grpc.WithInsecure())
 	require.NoError(t, err)
 	defer grpcConn.Close()
 	cosignerClient := proto.NewCosignerClient(grpcConn)
 
-	signature, err := cosignerClient.SignDigest(ctx, &proto.SignDigestRequest{
-		Digest:   digest,
+	signature, err := cosignerClient.SignRawBytes(ctx, &proto.SignRawBytesRequest{
+		RawBytes: rawBytes,
 		ChainId:  chainID,
 		UniqueId: uniqueID,
 	})

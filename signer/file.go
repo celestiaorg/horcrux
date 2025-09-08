@@ -262,7 +262,7 @@ func (pv *FilePV) Sign(chainID string, block Block) ([]byte, []byte, time.Time, 
 	return sig, extSig, block.Timestamp, nil
 }
 
-func (pv *FilePV) SignDigest(_ context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
+func (pv *FilePV) SignRawBytes(_ context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
 	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
 	if err != nil {
 		return nil, err
