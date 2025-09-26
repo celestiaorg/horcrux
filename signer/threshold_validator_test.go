@@ -30,18 +30,30 @@ import (
 
 func TestThresholdValidator2of2(t *testing.T) {
 	testThresholdValidator(t, 2, 2)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 2, 2)
+	})
 }
 
 func TestThresholdValidator3of3(t *testing.T) {
 	testThresholdValidator(t, 3, 3)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 3, 3)
+	})
 }
 
 func TestThresholdValidator2of3(t *testing.T) {
 	testThresholdValidator(t, 2, 3)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 2, 3)
+	})
 }
 
 func TestThresholdValidator3of5(t *testing.T) {
 	testThresholdValidator(t, 3, 5)
+	t.Run("sign raw bytes test", func(t *testing.T) {
+		testThresholdValidatorSignRawBytes(t, 3, 5)
+	})
 }
 
 func loadKeyForLocalCosigner(
@@ -336,6 +348,52 @@ func testThresholdValidator(t *testing.T, threshold, total uint8) {
 		err = eg.Wait()
 		require.NoError(t, err)
 	}
+}
+
+func testThresholdValidatorSignRawBytes(t *testing.T, threshold, total uint8) {
+	cosigners, pubKey := getTestLocalCosigners(t, threshold, total)
+
+	thresholdCosigners := make([]Cosigner, 0, threshold-1)
+	for i, cosigner := range cosigners {
+		require.Equal(t, i+1, cosigner.GetID())
+
+		if i != 0 && len(thresholdCosigners) != int(threshold)-1 {
+			thresholdCosigners = append(thresholdCosigners, cosigner)
+		}
+	}
+
+	leader := &MockLeader{id: 1}
+	validator := NewThresholdValidator(
+		cometlog.NewNopLogger(),
+		cosigners[0].config,
+		int(threshold),
+		time.Second,
+		1,
+		cosigners[0],
+		thresholdCosigners,
+		leader,
+	)
+	defer validator.Stop()
+
+	leader.leader = validator
+
+	ctx := context.Background()
+
+	err := validator.LoadSignStateIfNecessary(testChainID)
+	require.NoError(t, err)
+
+	chainID := testChainID
+	uniqueID := "id"
+	rawBytes := []byte("raw bytes msg")
+
+	signBytes, err := comet.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
+	require.NoError(t, err)
+	signature, err := validator.SignRawBytes(ctx, chainID, uniqueID, rawBytes)
+	require.NoError(t, err)
+	require.True(t, pubKey.VerifySignature(signBytes, signature))
+
+	firstSignature := signature
+	require.Len(t, firstSignature, 64)
 }
 
 func getTestLocalCosigners(t *testing.T, threshold, total uint8) ([]*LocalCosigner, cometcrypto.PubKey) {

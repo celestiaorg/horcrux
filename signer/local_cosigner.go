@@ -304,6 +304,51 @@ func (cosigner *LocalCosigner) sign(req CosignerSignRequest) (CosignerSignRespon
 	return res, nil
 }
 
+// signRawBytes Sign the sign request using the cosigner's shard.
+// Return the signed bytes or an error.
+// This method is exclusively used for raw bytes messages.
+// Implements Cosigner interface.
+func (cosigner *LocalCosigner) signRawBytes(req CosignerSignRequest) (CosignerSignResponse, error) {
+	res := CosignerSignResponse{}
+	if !req.IsRawBytes {
+		return res, fmt.Errorf("not a raw bytes message")
+	}
+
+	ccs, err := cosigner.getChainState(req.ChainID)
+	if err != nil {
+		return res, err
+	}
+
+	defer func() {
+		cosigner.noncesMu.Lock()
+		delete(cosigner.nonces, req.UUID)
+		cosigner.noncesMu.Unlock()
+	}()
+
+	nonces, err := cosigner.combinedNonces(
+		cosigner.GetID(),
+		uint8(cosigner.config.Config.ThresholdModeConfig.Threshold),
+		req.UUID,
+	)
+	if err != nil {
+		return res, err
+	}
+
+	var eg errgroup.Group
+	var sig []byte
+	eg.Go(func() error {
+		var err error
+		sig, err = ccs.signer.Sign(nonces, req.SignBytes)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return res, err
+	}
+
+	res.Signature = sig
+	return res, nil
+}
+
 func (cosigner *LocalCosigner) generateNonces() ([]Nonces, error) {
 	total := len(cosigner.config.Config.ThresholdModeConfig.Cosigners)
 	meta := make([]Nonces, total)
@@ -543,14 +588,20 @@ func (cosigner *LocalCosigner) SetNoncesAndSign(
 	}
 
 	cosignerReq := CosignerSignRequest{
-		UUID:      req.Nonces.UUID,
-		ChainID:   chainID,
-		SignBytes: req.SignBytes,
+		UUID:       req.Nonces.UUID,
+		ChainID:    chainID,
+		SignBytes:  req.SignBytes,
+		IsRawBytes: req.IsRawBytes,
 	}
 
 	if len(req.VoteExtensionSignBytes) > 0 {
 		cosignerReq.VoteExtensionSignBytes = req.VoteExtensionSignBytes
 		cosignerReq.VoteExtUUID = req.VoteExtensionNonces.UUID
+	}
+
+	if req.IsRawBytes {
+		res, err := cosigner.signRawBytes(cosignerReq)
+		return &res, err
 	}
 
 	res, err := cosigner.sign(cosignerReq)

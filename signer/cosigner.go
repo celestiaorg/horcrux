@@ -54,6 +54,7 @@ type CosignerSignRequest struct {
 	UUID                   uuid.UUID
 	VoteExtensionSignBytes []byte
 	VoteExtUUID            uuid.UUID
+	IsRawBytes             bool
 }
 
 type CosignerSignResponse struct {
@@ -118,6 +119,17 @@ type CosignerSignBlockResponse struct {
 	Signature              []byte
 	VoteExtensionSignature []byte
 }
+
+type CosignerSignRawBytesRequest struct {
+	ChainID  string
+	UniqueID string
+	RawBytes []byte
+}
+
+type CosignerSignRawBytesResponse struct {
+	Signature []byte
+}
+
 type CosignerUUIDNonces struct {
 	UUID   uuid.UUID
 	Nonces CosignerNonces
@@ -155,6 +167,8 @@ type CosignerSetNoncesAndSignRequest struct {
 
 	VoteExtensionNonces    *CosignerUUIDNonces
 	VoteExtensionSignBytes []byte
+
+	IsRawBytes bool
 }
 
 func verifySignPayload(chainID string, signBytes, voteExtensionSignBytes []byte) (HRSTKey, bool, error) {

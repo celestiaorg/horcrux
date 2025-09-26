@@ -2,6 +2,7 @@ package signer
 
 import (
 	"context"
+	"github.com/cometbft/cometbft/types"
 	"path/filepath"
 	"time"
 
@@ -124,4 +125,34 @@ func TestSingleSignerValidator(t *testing.T) {
 	require.True(t, privateKey.PubKey().VerifySignature(block.VoteExtensionSignBytes, voteExtSig),
 		"vote extension signature verification failed")
 
+}
+
+func TestSingleSignerValidatorSignRawBytes(t *testing.T) {
+	tmpDir := t.TempDir()
+	runtimeConfig := &RuntimeConfig{
+		HomeDir:  tmpDir,
+		StateDir: filepath.Join(tmpDir, "state"),
+	}
+
+	chainID := "test"
+	uid := "uid"
+	randomBytes := cometrand.Bytes(1000)
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uid, randomBytes)
+	require.NoError(t, err)
+
+	privateKey := cometcryptoed25519.GenPrivKey()
+	marshaled, err := cometjson.Marshal(cometprivval.FilePVKey{
+		Address: privateKey.PubKey().Address(),
+		PubKey:  privateKey.PubKey(),
+		PrivKey: privateKey,
+	})
+	require.NoError(t, err)
+	err = os.WriteFile(runtimeConfig.KeyFilePathSingleSigner(chainID), marshaled, 0600)
+	require.NoError(t, err)
+
+	validator := NewSingleSignerValidator(runtimeConfig)
+	signature, err := validator.SignRawBytes(context.Background(), chainID, uid, randomBytes)
+	require.NoError(t, err)
+
+	require.True(t, privateKey.PubKey().VerifySignature(signBytes, signature))
 }

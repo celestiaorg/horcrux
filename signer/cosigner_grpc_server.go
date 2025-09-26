@@ -44,10 +44,26 @@ func (rpc *CosignerGRPCServer) SignBlock(
 	}, nil
 }
 
+func (rpc *CosignerGRPCServer) SignRawBytes(
+	ctx context.Context,
+	req *proto.SignRawBytesRequest,
+) (*proto.SignedRawBytesResponse, error) {
+	sig, err := rpc.thresholdValidator.SignRawBytes(ctx, req.ChainId, req.UniqueId, req.RawBytes)
+	if err != nil {
+		return nil, err
+	}
+	return &proto.SignedRawBytesResponse{
+		Signature: sig,
+	}, nil
+}
+
 func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 	ctx context.Context,
 	req *proto.SetNoncesAndSignRequest,
 ) (*proto.SetNoncesAndSignResponse, error) {
+	if req.IsRawBytes {
+		return rpc.setNoncesAndSignRawBytes(ctx, req)
+	}
 	cosignerReq := CosignerSetNoncesAndSignRequest{
 		ChainID: req.ChainID,
 
@@ -93,6 +109,42 @@ func (rpc *CosignerGRPCServer) SetNoncesAndSign(
 		Signature:          res.Signature,
 		VoteExtNoncePublic: res.VoteExtensionNoncePublic,
 		VoteExtSignature:   res.VoteExtensionSignature,
+	}, nil
+}
+
+func (rpc *CosignerGRPCServer) setNoncesAndSignRawBytes(
+	ctx context.Context,
+	req *proto.SetNoncesAndSignRequest,
+) (*proto.SetNoncesAndSignResponse, error) {
+	if !req.IsRawBytes {
+		return nil, fmt.Errorf("expected is_raw_bytes to be true")
+	}
+	cosignerReq := CosignerSetNoncesAndSignRequest{
+		ChainID: req.ChainID,
+		Nonces: &CosignerUUIDNonces{
+			UUID:   uuid.UUID(req.Uuid),
+			Nonces: CosignerNoncesFromProto(req.Nonces),
+		},
+		SignBytes:  req.SignBytes,
+		IsRawBytes: req.IsRawBytes,
+	}
+
+	res, err := rpc.cosigner.SetNoncesAndSign(ctx, cosignerReq)
+	if err != nil {
+		rpc.raftStore.logger.Error(
+			"Failed to sign raw bytes with shard",
+			"chain_id", req.ChainID,
+			"error", err,
+		)
+		return nil, err
+	}
+	rpc.raftStore.logger.Info(
+		"Signed raw bytes with shard",
+		"chain_id", req.ChainID,
+	)
+	return &proto.SetNoncesAndSignResponse{
+		NoncePublic: res.NoncePublic,
+		Signature:   res.Signature,
 	}, nil
 }
 

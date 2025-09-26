@@ -103,6 +103,20 @@ func (s *RemoteSignerGRPCServer) Sign(
 	}, nil
 }
 
+func (s *RemoteSignerGRPCServer) SignRawBytes(
+	ctx context.Context,
+	req *proto.SignRawBytesRequest,
+) (*proto.SignedRawBytesResponse, error) {
+	sig, err := signRawBytes(s.logger, s.validator, req.ChainId, req.UniqueId, req.RawBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &proto.SignedRawBytesResponse{
+		Signature: sig,
+	}, nil
+}
+
 func signAndTrack(
 	ctx context.Context,
 	logger cometlog.Logger,
@@ -197,4 +211,27 @@ func signAndTrack(
 	}
 
 	return sig, voteExtSig, timestamp, nil
+}
+
+func signRawBytes(
+	logger cometlog.Logger,
+	validator PrivValidator,
+	chainID string,
+	uniqueID string,
+	rawBytes []byte,
+) ([]byte, error) {
+	sig, err := validator.SignRawBytes(context.Background(), chainID, uniqueID, rawBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	logger.Info(
+		"Signed",
+		"type", "raw_bytes",
+		"chain_id", chainID,
+		"unique_id", uniqueID,
+		"raw_bytes", rawBytes,
+	)
+
+	return sig, nil
 }

@@ -24,6 +24,7 @@ const connRetrySec = 2
 type PrivValidator interface {
 	Sign(ctx context.Context, chainID string, block Block) ([]byte, []byte, time.Time, error)
 	GetPubKey(ctx context.Context, chainID string) ([]byte, error)
+	SignRawBytes(ctx context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error)
 	Stop()
 }
 
@@ -178,6 +179,8 @@ func (rs *ReconnRemoteSigner) handleRequest(req cometprotoprivval.Message) comet
 		return rs.handlePubKeyRequest(typedReq.PubKeyRequest.ChainId)
 	case *cometprotoprivval.Message_PingRequest:
 		return rs.handlePingRequest()
+	case *cometprotoprivval.Message_SignRawBytesRequest:
+		return rs.handleSignRawBytesRequest(typedReq.SignRawBytesRequest.ChainId, typedReq.SignRawBytesRequest.UniqueId, typedReq.SignRawBytesRequest.RawBytes)
 	default:
 		rs.Logger.Error("Unknown request", "err", fmt.Errorf("%v", typedReq))
 		return cometprotoprivval.Message{}
@@ -205,6 +208,21 @@ func (rs *ReconnRemoteSigner) handleSignVoteRequest(chainID string, vote *cometp
 	msgSum.SignedVoteResponse.Vote.Timestamp = timestamp
 	msgSum.SignedVoteResponse.Vote.Signature = sig
 	msgSum.SignedVoteResponse.Vote.ExtensionSignature = voteExtSig
+	return cometprotoprivval.Message{Sum: msgSum}
+}
+
+func (rs *ReconnRemoteSigner) handleSignRawBytesRequest(chainID, uniqueID string, rawBytes []byte) cometprotoprivval.Message {
+	msgSum := &cometprotoprivval.Message_SignedRawBytesResponse{
+		SignedRawBytesResponse: &cometprotoprivval.SignedRawBytesResponse{},
+	}
+
+	sig, err := signRawBytes(rs.Logger, rs.privVal, chainID, uniqueID, rawBytes)
+	if err != nil {
+		msgSum.SignedRawBytesResponse.Error = getRemoteSignerError(err)
+		return cometprotoprivval.Message{Sum: msgSum}
+	}
+
+	msgSum.SignedRawBytesResponse.Signature = sig
 	return cometprotoprivval.Message{Sum: msgSum}
 }
 

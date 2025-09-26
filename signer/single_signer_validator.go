@@ -106,4 +106,12 @@ func (pv *SingleSignerValidator) loadChainStateIfNecessary(chainID string) (*Sin
 	return chainState, nil
 }
 
+func (pv *SingleSignerValidator) SignRawBytes(ctx context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
+	chainState, err := pv.loadChainStateIfNecessary(chainID)
+	if err != nil {
+		return nil, err
+	}
+	return chainState.filePV.SignRawBytes(ctx, chainID, uniqueID, rawBytes)
+}
+
 func (pv *SingleSignerValidator) Stop() {}

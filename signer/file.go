@@ -2,6 +2,7 @@ package signer
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -259,6 +260,18 @@ func (pv *FilePV) Sign(chainID string, block Block) ([]byte, []byte, time.Time, 
 	pv.saveSigned(height, round, step, signBytes, sig)
 
 	return sig, extSig, block.Timestamp, nil
+}
+
+func (pv *FilePV) SignRawBytes(_ context.Context, chainID, uniqueID string, rawBytes []byte) ([]byte, error) {
+	signBytes, err := types.RawBytesMessageSignBytes(chainID, uniqueID, rawBytes)
+	if err != nil {
+		return nil, err
+	}
+	sig, err := pv.Key.PrivKey.Sign(signBytes)
+	if err != nil {
+		return nil, err
+	}
+	return sig, nil
 }
 
 // Save persists the FilePV to disk.
