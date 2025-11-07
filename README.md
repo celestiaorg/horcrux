@@ -4,7 +4,7 @@ Horcrux is a [multi-party-computation (MPC)](https://en.wikipedia.org/wiki/Secur
 
 **Disclaimer**: 
 
-This fork adds support for raw byte message signing, required for the Celestia v6 release.
+This fork adds support for raw byte message signing, required for the celestia-app v6 release.
 Any issues related to double signing or existing functionality should be reported [upstream](https://github.com/strangelove-ventures/horcrux).
 Only issues specific to raw byte signing will be handled by the Celestia team.
 
